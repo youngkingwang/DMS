@@ -1,1 +1,1 @@
-git push -u origin master
+该项目是本人正在做的毕业设计，欢迎指导
