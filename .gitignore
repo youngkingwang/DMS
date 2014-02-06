@@ -25,4 +25,4 @@ Makefile*
 *.autosave
 
 #Directory
-/build-server-Desktop-Debug/
+./build-server-Desktop-Debug/
