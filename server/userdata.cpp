@@ -4,15 +4,14 @@
 using namespace std;
 
 //static variable and member function
-deque<MatchedLogRec> data;
-pthread_mutex_t mutex;
-pthread_cond_t con_p;
-pthread_mutex_t con_c;
+deque<MatchedLogRec> UserData::data;
+pthread_mutex_t UserData::mutex;
+pthread_cond_t UserData::con_p;
+pthread_cond_t UserData::con_c;
 
 UserData::UserData()
 {
     cout << "initial data buffer !" << endl;
-
 
 }
 
@@ -25,6 +24,7 @@ UserData::~UserData()
 void UserData::push_data(MatchedLogRec rec)
 {
     cout << "push data to data buffer pool !" << endl;
+    data.push_back(rec);
 
 }
 
@@ -33,4 +33,11 @@ MatchedLogRec UserData::pop_data()
 {
     cout << "fetch data from data buffer pool !" << endl;
 
+    MatchedLogRec temp;
+    if (data.empty() == false)
+    {
+        temp = data.back();
+        data.pop_back();
+    }
+    return temp;
 }

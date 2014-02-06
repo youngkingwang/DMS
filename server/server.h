@@ -1,3 +1,4 @@
+//采用并发服务器，每个线程一个accept模式
 #ifndef SERVER_H
 #define SERVER_H
 
@@ -14,7 +15,8 @@ public:
     void startService();	//throw ServerException
 private:
     char labIp[20];
-    int servfd;
+    int listenfd;
+    unsigned short port;
     DataReciveThread productor;
     DataSaveThread customer;
     UserData dataPoo;
