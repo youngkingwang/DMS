@@ -1,6 +1,9 @@
 #ifndef DATARECIVETHREAD_H
 #define DATARECIVETHREAD_H
 
+#include <pthread.h>
+
+//producer
 class DataReciveThread
 {
 public:
@@ -10,7 +13,7 @@ public:
     void start();
     static void* reciveData(void *par);
 private:
-    int threadid;
+    pthread_t threadid;
 
 };
 

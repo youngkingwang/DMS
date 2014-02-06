@@ -16,7 +16,7 @@ private:
     char labIp[20];
     int servfd;
     DataReciveThread productor;
-    DataSaveThread curstomer;
+    DataSaveThread customer;
     UserData dataPoo;
 };
 

@@ -14,13 +14,13 @@ public:
     UserData();
     ~UserData();
 
-    void push_data(MatchedLogRec rec);
-    MatchedLogRec pop_data();
+    static void push_data(MatchedLogRec rec);
+    static MatchedLogRec pop_data();
 private:
-    deque<MatchedLogRec> data;	//data cache pool
-    pthread_mutex_t mutex;	//控制线程安全的互斥量
-    pthread_cond_t con_p;
-    pthread_cond_t con_c;
+    static deque<MatchedLogRec> data;	//data cache pool
+    static pthread_mutex_t mutex;	//控制线程安全的互斥量
+    static pthread_cond_t con_p;
+    static pthread_cond_t con_c;
 };
 
 #endif // USERDATA_H

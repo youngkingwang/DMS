@@ -9,6 +9,7 @@ class LogDao
 {
 public:
     LogDao();
+    ~LogDao();
 
     void connect();
     void saveData(MatchedLogRec rec);

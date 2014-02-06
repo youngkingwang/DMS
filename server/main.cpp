@@ -8,5 +8,9 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
+    Server server;
+
+    server.startService();
+
     return a.exec();
 }

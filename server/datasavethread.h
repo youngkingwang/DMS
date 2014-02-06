@@ -3,19 +3,20 @@
 
 #include "logdao.h"
 
-
+//consumer
 class DataSaveThread
 {
 public:
     DataSaveThread();
+    ~DataSaveThread();
 
     void run();
     void start();
-    void* saveData(void *par);
+    static void* saveData(void *par);
     
 
 private:
-    int threadid;
+    pthread_t threadid;
     LogDao logDao;
 };
 
