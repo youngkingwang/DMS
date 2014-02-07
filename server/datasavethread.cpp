@@ -23,14 +23,15 @@ void DataSaveThread::run()
     cout << "invoke database!" << endl;
     MatchedLogRec log;
 
-    while(UserData::isEmpty() == false) // data buffer is not empty
+    while(true) // data buffer is not empty
     {
-       sleep(2);
+       //sleep(2);
        cout << "save data to database !" << endl;
 
        pthread_mutex_lock(&UserData::mutex);
        if(UserData::isEmpty() == true)
        {
+           cout << "consumer is sleep !" << endl;
            pthread_cond_wait(&UserData::bufferNotEmpty, &UserData::mutex);
        }
        log = UserData::pop_data();

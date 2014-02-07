@@ -24,10 +24,11 @@ void LogDao::connect()
 */
 void LogDao::saveData(MatchedLogRec rec)
 {
-    cout << "save data and into database !" << endl;
-    cout << "=========  save data test ========" << endl;
+    //cout << "save data and into database !" << endl;
+    //cout << "=========  save data test ========" << endl;
 
-    cout << rec.logname << endl;
+    cout << "save to database: " << rec.logname
+         << " " << rec.logip << endl;
 
 }
 

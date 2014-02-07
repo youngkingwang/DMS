@@ -22,8 +22,9 @@ void DataReciveThread::run()
 
     while(read(this->connfd, &log, sizeof(log)) > 0)
     {
-        sleep(2);
-        cout << "recive data from client" << endl;
+        //sleep(2);
+        cout << "recive data: " <<  log.logname << " "
+                << log.logip << endl;
 
         pthread_mutex_lock(&UserData::mutex);
         isempty = UserData::isEmpty();
@@ -34,7 +35,7 @@ void DataReciveThread::run()
         if(isempty == true)
         {
             pthread_cond_signal(&UserData::bufferNotEmpty);
-            isempty = false;
+           isempty = false;
         }
         pthread_mutex_unlock(&UserData::mutex);
     }
