@@ -6,8 +6,8 @@ using namespace std;
 //static variable and member function
 deque<MatchedLogRec> UserData::data;
 pthread_mutex_t UserData::mutex;
-pthread_cond_t UserData::con_p;
-pthread_cond_t UserData::con_c;
+pthread_cond_t UserData::bufferNotEmpty;
+pthread_cond_t UserData::bufferNotFull;
 
 UserData::UserData()
 {
@@ -40,4 +40,9 @@ MatchedLogRec UserData::pop_data()
         data.pop_back();
     }
     return temp;
+}
+
+bool UserData::isEmpty()
+{
+    return data.empty();
 }

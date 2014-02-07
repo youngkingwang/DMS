@@ -7,6 +7,7 @@
 
 using namespace std;
 
+
 DataSaveThread::DataSaveThread()
 {
     logDao.connect();
@@ -20,14 +21,24 @@ DataSaveThread::~DataSaveThread()
 void DataSaveThread::run()
 {
     cout << "invoke database!" << endl;
+    MatchedLogRec log;
 
-    while(true)
+    while(UserData::isEmpty() == false) // data buffer is not empty
     {
        sleep(2);
        cout << "save data to database !" << endl;
-       UserData::pop_data();
 
+       pthread_mutex_lock(&UserData::mutex);
+       if(UserData::isEmpty() == true)
+       {
+           pthread_cond_wait(&UserData::bufferNotEmpty, &UserData::mutex);
+       }
+       log = UserData::pop_data();
+       logDao.saveData(log);
+       pthread_mutex_unlock(&UserData::mutex);
     }
+
+    logDao.commitData();
 }
 
 //完成线程的创建和启动线程
@@ -47,5 +58,5 @@ void* DataSaveThread::saveData(void *par)
 
     th->run();
 
-    return (void*)0;
+    return nullptr;
 }

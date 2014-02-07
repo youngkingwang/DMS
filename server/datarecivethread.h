@@ -11,10 +11,11 @@ public:
     DataReciveThread();
 
     void run();
-    void start();
+    void start(int arg); //arg: client fd
     static void* reciveData(void *par);
 private:
     pthread_t threadid;
+    int connfd;
 
 };
 

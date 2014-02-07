@@ -16,11 +16,11 @@ public:
 
     static void push_data(MatchedLogRec rec);
     static MatchedLogRec pop_data();
-private:
+    static bool isEmpty();
     static deque<MatchedLogRec> data;	//data buffer pool
     static pthread_mutex_t mutex;	//控制线程安全的互斥量
-    static pthread_cond_t con_p;
-    static pthread_cond_t con_c;
+    static pthread_cond_t bufferNotEmpty;
+    static pthread_cond_t bufferNotFull;
 };
 
 #endif // USERDATA_H

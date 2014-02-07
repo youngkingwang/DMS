@@ -39,8 +39,8 @@ void Server::initSocket() //should exception
         sockaddr *cliaddr = new sockaddr;
         socklen_t clilen;
 
-         accept(listenfd, cliaddr, &clilen);
-         productor.start();
+         int connfd = accept(listenfd, cliaddr, &clilen);
+         productor.start(connfd);
 
          delete cliaddr;
     }

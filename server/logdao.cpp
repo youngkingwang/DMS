@@ -1,5 +1,6 @@
 #include "logdao.h"
 #include <iostream>
+#include "../client/data.h"
 
 using namespace std;
 
@@ -15,6 +16,7 @@ void LogDao::connect()
 {
     cout << "connect database !" << endl;
 
+
 }
 
 /*存储数据，根据日志记录的推出时间放入相应的日志表中
@@ -23,6 +25,9 @@ void LogDao::connect()
 void LogDao::saveData(MatchedLogRec rec)
 {
     cout << "save data and into database !" << endl;
+    cout << "=========  save data test ========" << endl;
+
+    cout << rec << endl;
 
 }
 
