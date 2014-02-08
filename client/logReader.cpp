@@ -104,6 +104,24 @@ void LogReader::readFailLogins()throw(ReadFailLoginException)
 //读取备份日志文件，把读取到的数据存储到对应的属性中
 void LogReader::readBackupFile()throw(ReadException)
 {
+    /**
+         * 数据格式说明
+         * 位置范围	字节长度	含义
+         * 000-031	32	 user login name
+         * 032-035	4	 inittab id
+         * 036-067	32	 device name (console, lnxx)
+         * 068-071	4	 process id
+         * 072-073	2	 type of entry
+         * 074-075	2	 process termination
+         * 076-077	2	 exit status
+         *          2	 这是C数据类型补齐产生的空位
+         * 080-083	4	 time entry was made  seconds
+         * 084-087	4	 and microseconds
+         * 088-091	4	 session ID, used for windowing
+         * 092-111	20	 reserved for future use
+         * 112-113	2	 significant length of ut_host
+         * 114-371	257	 remote host name
+         */
     cout << "读取备份的文件" << endl;
     int fd;
     int count;
@@ -133,61 +151,65 @@ void LogReader::readBackupFile()throw(ReadException)
     {
         lseek(fd, i*372, SEEK_SET);
 
+        //read logname
         read(fd, logname, 32);
 
+        //skip 36bytes
         lseek(fd, 36, SEEK_CUR);
 
+        //read pid
         pid = ntohl(pid);
 
         read(fd, &pid, sizeof(pid));
+
+        //read type:login 7, logout 8
         if(read(fd, &type, sizeof(type)) == -1)
             cout << "err: read type" << endl, exit(-1);
         type = ntohs(type);
 
+        //skip 6 bytes
         lseek(fd, 6, SEEK_CUR);
 
+        //read login time or logout time
         read(fd, &logtime, sizeof(logtime));
 
+        //skip 28 bytes
         lseek(fd, 28, SEEK_CUR);
 
+        //read the length of IP
         read(fd, &len, sizeof(len));
         len = ntohs(len);
 
+        //read the IP address
         read(fd, logip, sizeof(logip));
         logip[len] = 0;
 
-        //cout << logname << ", " << type << ", " << logip << endl;
 
-        if (memcmp(logname, ".", 1) != 0)
+        //ignore the record which logname begin with "." token
+        if ((memcmp(logname, ".", 1) != 0) &&
+                memcmp(logname, "root", sizeof("root")) &&
+                (type == 7 || type == 8))
         {
             LogRec log;
             memcpy(log.logname, logname, sizeof(logname));
             memcpy(log.logip, logip, 32);
             log.logtime = logtime;
-            if(type == 7) {
+            log.type = type;
+            log.pid = pid;
+
+            if(type == 7) {//login type
                 logins.push_back(log);
-//            cout << "======test " << log.logname << endl;
            }
-            if (type == 8) {
-//            cout << "======test " << log.logname << endl;
+            if (type == 8) {//logout type
                 logouts.push_back((log));
             }
-           // cout << log.logname << endl;
-        //cout << logname << ", " << type << ", " << logip << endl;
-//            cout << "------------------test....." <<log.type << endl;
+        } else {
+            continue;
         }
 
     }
     cout <<"login " << logins.size()
                 << ", log out " << logouts.size() << endl;
-
-    list<LogRec>::iterator it;
-
-    if(logins.empty() == true)
-        cout << "logins is empty!" << endl;
-    //for (it=logins.begin(); it != logins.end(); ++it) {
-    //cout << it->logname << endl;
-   // }
 }
 
 //将登入/登出记录匹配为完整的登录记录，logins,logouts匹配存入matches
@@ -208,21 +230,26 @@ void LogReader::matchLogRec()throw(MatchLogRecException)
 
    for(auto i=begin(logins); i != end(logins); ++i)
    {
+       /* find the logout record matching with login record
+        * here, overloading operator== which compare login and logout
+        * record whether  login match with logout or not*/
        result = find(begin(logouts), end(logouts), *i);
+       //matched
        if(result != last)
        {
            bzero(&matchedLog, 0);
+
            strcpy(matchedLog.logname, i->logname);
            matchedLog.pid = getpid();
            strcpy(matchedLog.logip , i->logip);
            matchedLog.loginTime = i->logtime;
            matchedLog.logoutTime = result->logtime;
            matchedLog.durations = matchedLog.logoutTime - matchedLog.loginTime;
-           execmd(cmd, matchedLog.labip);
-           //cout << matchedLog << endl;
-           //cout << matchedLog.logname << endl;
+           //cout << "login time: " << i->logtime <<"logout: "
+            //       << result->logtime << endl;
+
+           execmd(cmd, matchedLog.labip);//get labip
            matches.push_back(matchedLog);
-           //cout << matchedLog << endl;
 
        }
        else
@@ -230,68 +257,9 @@ void LogReader::matchLogRec()throw(MatchLogRecException)
            saveFailLogins(*i);
        }
        cout << "matches size: " << matches.size() << endl;
-       //cout << "-------------test-----------" << endl;
-       //cout << logins.size() << " " << logouts.size() << endl;
 
+             }
 
-       //bool isMatch = false;
-       //result = find(begin(logouts), end(logouts), *i);
-       /*
-       for (auto j=begin(logouts); j != end(logouts); ++j)
-       {
-           //	3.1 如果一个元素匹配成功，则将该元素存入matches中
-           if (*i == *j)
-           {
-               //matches.push_back(static_cast<MatchedLogRec>(i));
-               bzero(&matchedLog, 0);
-               strcpy(matchedLog.logname, i->logname);
-               matchedLog.pid = getpid();
-               strcpy(matchedLog.logip , i->logip);
-               matchedLog.loginTime = i->logtime;
-               matchedLog.logoutTime = j->logtime;
-               matchedLog.durations = matchedLog.logoutTime - matchedLog.loginTime;
-               execmd(cmd, matchedLog.labip);
-               //cout << matchedLog << endl;
-               //cout << matchedLog.logname << endl;
-               matches.push_back(matchedLog);
-               //cout << matchedLog << endl;
-               isMatch = true;
-               break;
-
-           cout << matchedLog.logname << " "
-                << matchedLog.pid << " "
-
-                << matchedLog.logip << " "
-                << matchedLog.loginTime << " "
-                << matchedLog.logoutTime << " "
-                << matchedLog.durations  << " "
-                << matchedLog.labip;
-                */
-       }
-
-
-   /*
-       cout << "matches size: " << matches.size() << endl;
-       if (!isMatch)
-           saveFailLogins(*i);
-           */
-
-       //	3.2 否则如果失败，则将该元素存入文件logins.dat
-           /*
-       else
-       {
-       fd = open("logins.dat", O_WRONLY|O_TRUNC);
-       if (fd == -1)
-       {
-       throw MatchLogRecException("err:open logins.dat fail!");
-       }
-       write(fd, *i, logRecSize);
-       close(fd);
-       /
-           saveFailLogins(*i);
-
-       }
-       */
 
    cout << "matches size: " << matches.size() << endl;
 
