@@ -28,19 +28,6 @@ struct MatchedLogRec{
     char labip[257];	//dababase
 };
 
-struct WtmpxFormat
-{
-    char logname[32];
-    char none1[36];
-    unsigned int pid;
-    unsigned short type;
-    short none2;
-    int exitnum;
-    long logtime;
-    char none3[30];
-    char logip[258];
-};
-
 ostream& operator<< (ostream& os, const MatchedLogRec& matchLog);
 
 #endif

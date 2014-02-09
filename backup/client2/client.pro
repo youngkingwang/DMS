@@ -13,7 +13,7 @@ SOURCES += main.cpp	\
 			client.cpp	\
 			logReader.cpp	\
 			logSender.cpp	\
-    data.cpp \
+    data.cpp
 
 HEADERS += client.h	\
 			clientException.h	\

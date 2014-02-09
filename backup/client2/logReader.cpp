@@ -11,7 +11,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <algorithm>
-#include <ctime>
 
 using namespace std;
 
@@ -127,12 +126,12 @@ void LogReader::readBackupFile()throw(ReadException)
     int fd;
     int count;
     struct stat st;
-    //char logname[34];
-    //char logip[257];
-    //short type;	//2 log type 7: log, 8: logout
-    //long logtime;	//log time:4
-    //short len;	//ip length:2
-    //pid_t pid;	//process ID:4
+    char logname[34];
+    char logip[257];
+    short type;	//2 log type 7: log, 8: logout
+    long logtime;	//log time:4
+    short len;	//ip length:2
+    pid_t pid;	//process ID:4
 
     fd = open(backFileName, O_RDONLY);
     if(fd == -1) {
@@ -148,83 +147,25 @@ void LogReader::readBackupFile()throw(ReadException)
 
     //3 read data
     cout << "========= read log ============" << endl;
-
-    LogRec tempuse;
-    WtmpxFormat temp;
-    char buf[100];
-    struct tm *t;
-    //time_t tt;
-    while(1)
-    {
-
-        bzero(&temp, sizeof(temp));
-        if(read(fd, &temp,sizeof(temp)) <=0) {
-            break;
-        }
-
-        temp.type = ntohs(temp.type);
-        if ((temp.type != 7) && (temp.type != 8)) {
-            continue;
-        }
-
-        bzero(&tempuse, sizeof(tempuse));
-        bzero(buf, sizeof(buf));
-
-        temp.pid = ntohl(temp.pid);
-
-        //登陆时间
-        temp.logtime = ntohl(temp.logtime);
-        time_t tt = temp.logtime;
-        t = localtime(&tt);
-
-        sprintf(buf,"%s\t%d\t%s\t%04d-%02d-%02d %02d:%02d:%02d\n",temp.logname,temp.pid,temp.logip,
-                t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
-
-        strcpy(tempuse.logname, temp.logname);
-        tempuse.pid = temp.pid;
-        tempuse.logtime = temp.logtime;
-            tempuse.type = temp.type;
-        strcpy(tempuse.logip, temp.logip);
-
-
-        if (memcmp(tempuse.logname, ".", 1) == 0) {
-            continue;
-        }
-
-        if(temp.type == 7)
-        {
-            logins.push_back(tempuse);
-            //cout <<"login: " <<  tempuse.logname << " " << tempuse.pid <<" " << tempuse.logip << endl;
-            cout << "login: " << buf << endl;
-        }
-        if (temp.type == 8) {
-            logouts.push_back(tempuse);
-            //cout << "logout: " << tempuse.logname << " " << tempuse.pid <<" " << tempuse.logip << endl;
-            cout << "logout: " << buf << endl;
-        }
-    }
-    close(fd);
-}
-/*
     for (int i = 0; i < count; ++i)
     {
-    lseek(fd, i*372, SEEK_SET);
+        lseek(fd, i*372, SEEK_SET);
 
-    //read logname
-    read(fd, logname, 32);
+        //read logname
+        read(fd, logname, 32);
 
-    //skip 36bytes
-    lseek(fd, 36, SEEK_CUR);
+        //skip 36bytes
+        lseek(fd, 36, SEEK_CUR);
 
-    //read pid
-    pid = ntohl(pid);
+        //read pid
+        pid = ntohl(pid);
 
-    read(fd, &pid, sizeof(pid));
+        read(fd, &pid, sizeof(pid));
 
-    //read type:login 7, logout 8
-    if(read(fd, &type, sizeof(type)) == -1)
-        cout << "err: read type" << endl, exit(-1);
-    type = ntohs(type);
+        //read type:login 7, logout 8
+        if(read(fd, &type, sizeof(type)) == -1)
+            cout << "err: read type" << endl, exit(-1);
+        type = ntohs(type);
 
         //skip 6 bytes
         lseek(fd, 6, SEEK_CUR);
@@ -267,62 +208,15 @@ void LogReader::readBackupFile()throw(ReadException)
         }
 
     }
-    */
-    //cout <<"login " << logins.size()
-     //           << ", log out " << logouts.size() << endl;
-
-
+    cout <<"login " << logins.size()
+                << ", log out " << logouts.size() << endl;
+}
 
 //将登入/登出记录匹配为完整的登录记录，logins,logouts匹配存入matches
 void LogReader::matchLogRec()throw(MatchLogRecException)
 {
 
     cout << "开始匹配记录" << endl;
-    readFailLogins();
-    MatchedLogRec matchedLog;
-
-    const char *cmd = "/home/test/workspace/dms/client/getip.sh";
-    auto tempi = begin(logouts);
-
-    for(auto i=begin(logins); i != end(logins); ++i)
-    {
-        for(auto j=begin(logouts); j != end(logouts); ++j)
-        {
-            if(j->logtime <  i-> logtime) {
-        cout << " ++++++++++ test+++++++++++" << endl;
-
-            tempi++;
-                //logouts.pop_front();
-            }
-            else {
-                break;
-            }
-        }
-
-        for(auto j= tempi; j != end(logouts); ++j)
-        {
-            if(*i == *j)
-            {
-                strcpy(matchedLog.logname, i->logname);
-                matchedLog.pid = i->pid;
-                strcpy(matchedLog.logip, i->logip);
-                matchedLog.loginTime = i->logtime;
-                matchedLog.logoutTime = j->logtime;
-                matchedLog.durations = matchedLog.logoutTime - matchedLog.loginTime;
-                execmd(cmd, matchedLog.labip);
-                matches.push_back(matchedLog);
-
-            }
-            else
-            {
-               saveFailLogins(*i);
-            }
-        }
-
-        cout << "matched size: " << matches.size() << endl;
-    }
-
-    /*
     //1、备份logins.dat文件
     //2、读取logins.dat文件，将读到元素存入logins,然后清空logins.dat
    readFailLogins();
@@ -336,12 +230,10 @@ void LogReader::matchLogRec()throw(MatchLogRecException)
 
    for(auto i=begin(logins); i != end(logins); ++i)
    {
-       // find the logout record matching with login record
-        // here, overloading operator== which compare login and logout
-        // record whether  login match with logout or not
-        //
+       /* find the logout record matching with login record
+        * here, overloading operator== which compare login and logout
+        * record whether  login match with logout or not*/
        result = find(begin(logouts), end(logouts), *i);
-
        //matched
        if(result != last)
        {
@@ -367,8 +259,6 @@ void LogReader::matchLogRec()throw(MatchLogRecException)
        cout << "matches size: " << matches.size() << endl;
 
              }
-             */
-
 
 
    cout << "matches size: " << matches.size() << endl;
