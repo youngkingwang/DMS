@@ -12,6 +12,9 @@
 #include <arpa/inet.h>
 #include <algorithm>
 #include <ctime>
+#include <list>
+#include <vector>
+
 
 using namespace std;
 
@@ -123,255 +126,123 @@ void LogReader::readBackupFile()throw(ReadException)
          * 112-113	2	 significant length of ut_host
          * 114-371	257	 remote host name
          */
+
     cout << "读取备份的文件" << endl;
-    int fd;
-    int count;
-    struct stat st;
-    //char logname[34];
-    //char logip[257];
-    //short type;	//2 log type 7: log, 8: logout
-    //long logtime;	//log time:4
-    //short len;	//ip length:2
-    //pid_t pid;	//process ID:4
-
-    fd = open(backFileName, O_RDONLY);
-    if(fd == -1) {
-        throw ReadException("Cannot open backup file!");
-    }
-
-    //2 get count of recorde
-    if (fstat(fd, &st) == -1) {
-       throw ReadException("Cannot get backup file size!") ;
-    }
-
-    count = st.st_size / 372;
-
-    //3 read data
-    cout << "========= read log ============" << endl;
-
-    LogRec tempuse;
+    time_t tt;
+    struct tm t;
     WtmpxFormat temp;
-    char buf[100];
-    struct tm *t;
-    //time_t tt;
-    while(1)
-    {
+    LogRec tempuse;
 
-        bzero(&temp, sizeof(temp));
-        if(read(fd, &temp,sizeof(temp)) <=0) {
+    FILE *p = fopen(backFileName, "rb");
+    if(p == NULL)
+        throw ReadException("open backfiel fail!");
+
+    cout << "begin to read data" << endl;
+    while(true)
+    {
+        memset(&temp,0,sizeof(temp));
+        int i=fread(&temp,sizeof(temp),1,p);
+        if (i<=0)
+        {
             break;
         }
-
         temp.type = ntohs(temp.type);
-        if ((temp.type != 7) && (temp.type != 8)) {
+        if (temp.type!=7&&temp.type!=8)
+        {
             continue;
         }
-
-        bzero(&tempuse, sizeof(tempuse));
-        bzero(buf, sizeof(buf));
+        memset(&tempuse,0,sizeof(tempuse));
 
         temp.pid = ntohl(temp.pid);
 
-        //登陆时间
         temp.logtime = ntohl(temp.logtime);
-        time_t tt = temp.logtime;
-        t = localtime(&tt);
 
-        sprintf(buf,"%s\t%d\t%s\t%04d-%02d-%02d %02d:%02d:%02d\n",temp.logname,temp.pid,temp.logip,
-                t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
+        strcpy(tempuse.logname,temp.logname);
+        tempuse.pid=temp.pid;
+        tempuse.logtime=temp.logtime;
+        strcpy(tempuse.logip,temp.logip);
 
-        strcpy(tempuse.logname, temp.logname);
-        tempuse.pid = temp.pid;
-        tempuse.logtime = temp.logtime;
-            tempuse.type = temp.type;
-        strcpy(tempuse.logip, temp.logip);
-
-
-        if (memcmp(tempuse.logname, ".", 1) == 0) {
+        if(memcmp(tempuse.logname,".",1)==0 || strlen(tempuse.logip) < 4)
+        {
             continue;
         }
-
-        if(temp.type == 7)
+        if(temp.type==7)
         {
             logins.push_back(tempuse);
-            //cout <<"login: " <<  tempuse.logname << " " << tempuse.pid <<" " << tempuse.logip << endl;
-            cout << "login: " << buf << endl;
+
         }
-        if (temp.type == 8) {
-            logouts.push_back(tempuse);
-            //cout << "logout: " << tempuse.logname << " " << tempuse.pid <<" " << tempuse.logip << endl;
-            cout << "logout: " << buf << endl;
-        }
-    }
-    close(fd);
-}
-/*
-    for (int i = 0; i < count; ++i)
-    {
-    lseek(fd, i*372, SEEK_SET);
-
-    //read logname
-    read(fd, logname, 32);
-
-    //skip 36bytes
-    lseek(fd, 36, SEEK_CUR);
-
-    //read pid
-    pid = ntohl(pid);
-
-    read(fd, &pid, sizeof(pid));
-
-    //read type:login 7, logout 8
-    if(read(fd, &type, sizeof(type)) == -1)
-        cout << "err: read type" << endl, exit(-1);
-    type = ntohs(type);
-
-        //skip 6 bytes
-        lseek(fd, 6, SEEK_CUR);
-
-        //read login time or logout time
-        read(fd, &logtime, sizeof(logtime));
-
-        //skip 28 bytes
-        lseek(fd, 28, SEEK_CUR);
-
-        //read the length of IP
-        read(fd, &len, sizeof(len));
-        len = ntohs(len);
-
-        //read the IP address
-        read(fd, logip, sizeof(logip));
-        logip[len] = 0;
-
-
-        //ignore the record which logname begin with "." token
-        if ((memcmp(logname, ".", 1) != 0) &&
-                memcmp(logname, "root", sizeof("root")) &&
-                (type == 7 || type == 8))
+        if(temp.type==8)
         {
-            LogRec log;
-            memcpy(log.logname, logname, sizeof(logname));
-            memcpy(log.logip, logip, 32);
-            log.logtime = logtime;
-            log.type = type;
-            log.pid = pid;
-
-            if(type == 7) {//login type
-                logins.push_back(log);
-           }
-            if (type == 8) {//logout type
-                logouts.push_back((log));
-            }
-        } else {
-            continue;
+            logouts.push_back(tempuse);
         }
-
     }
-    */
-    //cout <<"login " << logins.size()
-     //           << ", log out " << logouts.size() << endl;
+    fclose(p);
+    for (auto i=begin(logins); i != end(logins); ++i)
+    {
+        time_t tt=i->logtime;
+        struct tm *t = localtime(&tt);
 
+        cout << i->logname << "\t" << i->pid << "\t" << i->logip << "\t"
+             << t->tm_year <<"-" << t->tm_mon << "-" << t->tm_mday
+             << " " << t->tm_hour <<":" << t->tm_min << ":" << t->tm_sec
+             << endl;
+    }
+
+    cout << "login size: " << logins.size() << " logout size: " << logouts.size() << endl;
+    sleep(3);
+
+}
 
 
 //将登入/登出记录匹配为完整的登录记录，logins,logouts匹配存入matches
 void LogReader::matchLogRec()throw(MatchLogRecException)
 {
 
-    cout << "开始匹配记录" << endl;
     readFailLogins();
-    MatchedLogRec matchedLog;
+    size_t pos = 0;//有效区间的初始位置
+    size_t loginSize = logins.size();
+    size_t logoutSize = logouts.size();
+    size_t maxSize;
+    size_t matchSize = 0;//计数器：统计已经成功匹配的记录
+    bool isMatch = false;
 
-    const char *cmd = "/home/test/workspace/dms/client/getip.sh";
-    auto tempi = begin(logouts);
+    maxSize = (loginSize > logoutSize) ? loginSize : logoutSize;
+    cout << loginSize << " " << logoutSize << " " << maxSize << endl;
 
-    for(auto i=begin(logins); i != end(logins); ++i)
+    LogRec logout;
+    for (int i=0; i < logoutSize; ++i)
     {
-        for(auto j=begin(logouts); j != end(logouts); ++j)
+        logout = logouts[i];
+        LogRec login;
+        for (int j=0; j < loginSize; ++j)
         {
-            if(j->logtime <  i-> logtime) {
-        cout << " ++++++++++ test+++++++++++" << endl;
-
-            tempi++;
-                //logouts.pop_front();
-            }
-            else {
-                break;
-            }
-        }
-
-        for(auto j= tempi; j != end(logouts); ++j)
-        {
-            if(*i == *j)
+            login = logins[j];
+            if (login.pid ==logout.pid && strcmp(login.logip, logout.logip) == 0 && strcmp(login.logname, logout.logname) == 0)
             {
-                strcpy(matchedLog.logname, i->logname);
-                matchedLog.pid = i->pid;
-                strcpy(matchedLog.logip, i->logip);
-                matchedLog.loginTime = i->logtime;
-                matchedLog.logoutTime = j->logtime;
-                matchedLog.durations = matchedLog.logoutTime - matchedLog.loginTime;
-                execmd(cmd, matchedLog.labip);
-                matches.push_back(matchedLog);
+                if (login.logtime < logout.logtime)
+                {
+                    MatchedLogRec tempMatch;
+                    strcpy(tempMatch.logname, login.logname);
+                    tempMatch.pid = login.pid;
+                    strcpy(tempMatch.logip, tempMatch.logip);
+                    tempMatch.loginTime = login.logtime;
+                    tempMatch.logoutTime = logout.logtime;
+                    tempMatch.durations = logout.logtime - login.logtime;
+
+                    matches.push_back(tempMatch);
+                    ++matchSize;
+                    isMatch = true;
+                    break;
+                }
 
             }
-            else
-            {
-               saveFailLogins(*i);
-            }
+
         }
-
-        cout << "matched size: " << matches.size() << endl;
+        if (isMatch == false)
+            saveFailLogins(login);
     }
+    cout << "matches size: " << matchSize << endl;
 
-    /*
-    //1、备份logins.dat文件
-    //2、读取logins.dat文件，将读到元素存入logins,然后清空logins.dat
-   readFailLogins();
-        //make logins.dat empty
-
-    //3、将logins中每个元素与logouts进行循环比较
-   auto last = end(logouts);
-   auto result = end(logouts);
-   MatchedLogRec matchedLog;
-   const char *cmd = "/home/test/workspace/dms/client/getip.sh";
-
-   for(auto i=begin(logins); i != end(logins); ++i)
-   {
-       // find the logout record matching with login record
-        // here, overloading operator== which compare login and logout
-        // record whether  login match with logout or not
-        //
-       result = find(begin(logouts), end(logouts), *i);
-
-       //matched
-       if(result != last)
-       {
-           bzero(&matchedLog, 0);
-
-           strcpy(matchedLog.logname, i->logname);
-           matchedLog.pid = getpid();
-           strcpy(matchedLog.logip , i->logip);
-           matchedLog.loginTime = i->logtime;
-           matchedLog.logoutTime = result->logtime;
-           matchedLog.durations = matchedLog.logoutTime - matchedLog.loginTime;
-           //cout << "login time: " << i->logtime <<"logout: "
-            //       << result->logtime << endl;
-
-           execmd(cmd, matchedLog.labip);//get labip
-           matches.push_back(matchedLog);
-
-       }
-       else
-       {
-           saveFailLogins(*i);
-       }
-       cout << "matches size: " << matches.size() << endl;
-
-             }
-             */
-
-
-
-   cout << "matches size: " << matches.size() << endl;
 
 }
 

@@ -28,3 +28,8 @@ ostream& operator<< (ostream& os, const MatchedLogRec& matchLog)
     return os;
 
 }
+
+bool operator< (const LogRec& l, const LogRec& r)
+{
+    return (l.logtime < l.logtime);
+}

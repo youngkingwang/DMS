@@ -5,6 +5,7 @@
 #include "clientException.h"
 #include<list>
 #include<string>
+#include <vector>
 
 using namespace std;
 
@@ -24,8 +25,8 @@ private:
     char logFileName[50];	//char logFileName[50];
     char backFileName[50];	//char backfileName[50];
     char failLoginsFileName[50];	//char failLoginsFileName[50];
-	list<LogRec> logins;
-	list<LogRec> logouts;
+    vector<LogRec> logins;
+    vector<LogRec> logouts;
 	list<MatchedLogRec> matches;
 
 	void backup() throw(BackupException);	//备份日志文件wtmpx

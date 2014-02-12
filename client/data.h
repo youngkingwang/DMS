@@ -28,6 +28,8 @@ struct MatchedLogRec{
     char labip[257];	//dababase
 };
 
+bool operator< (const LogRec& l, const LogRec& r);
+
 struct WtmpxFormat
 {
     char logname[32];

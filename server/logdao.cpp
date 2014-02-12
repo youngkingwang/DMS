@@ -1,6 +1,8 @@
 #include "logdao.h"
-#include <iostream>
 #include "../client/data.h"
+#include <iostream>
+#include <QtSql/QSql>
+#include <
 
 using namespace std;
 

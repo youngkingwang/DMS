@@ -8,6 +8,8 @@ QT       += core
 
 QT       -= gui
 
+QT	+= sql
+
 TARGET = server
 CONFIG   += console
 CONFIG   -= app_bundle
