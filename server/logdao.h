@@ -14,7 +14,7 @@ public:
     ~LogDao();
 
     void connect();
-    void saveData(MatchedLogRec rec);
+    void saveData(const MatchedLogRec& rec);
     void commitData();
     void disConnect();
 private:

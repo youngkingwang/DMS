@@ -189,7 +189,7 @@ void LogReader::readBackupFile()throw(ReadException)
     }
 
     cout << "login size: " << logins.size() << " logout size: " << logouts.size() << endl;
-    sleep(3);
+    //sleep(3);
 
 }
 
@@ -209,10 +209,12 @@ void LogReader::matchLogRec()throw(MatchLogRecException)
     maxSize = (loginSize > logoutSize) ? loginSize : logoutSize;
     cout << loginSize << " " << logoutSize << " " << maxSize << endl;
 
-    LogRec logout;
+    const char *cmd = "/home/test/workspace/dms/client/getip.sh";
+
     for (int i=0; i < logoutSize; ++i)
     {
-        logout = logouts[i];
+        isMatch = false;
+        const LogRec& logout = logouts[i];
         LogRec login;
         for (int j=0; j < loginSize; ++j)
         {
@@ -224,25 +226,34 @@ void LogReader::matchLogRec()throw(MatchLogRecException)
                     MatchedLogRec tempMatch;
                     strcpy(tempMatch.logname, login.logname);
                     tempMatch.pid = login.pid;
-                    strcpy(tempMatch.logip, tempMatch.logip);
+                    strcpy(tempMatch.logip, login.logip);
                     tempMatch.loginTime = login.logtime;
                     tempMatch.logoutTime = logout.logtime;
                     tempMatch.durations = logout.logtime - login.logtime;
 
+                    execmd(cmd, tempMatch.labip);
+
                     matches.push_back(tempMatch);
                     ++matchSize;
                     isMatch = true;
+                    cout << "-----------------match OK-----------------" << endl;
                     break;
                 }
 
             }
 
         }
-        if (isMatch == false)
+        if (isMatch == false){
             saveFailLogins(login);
-    }
+            continue;
+        }
+
     cout << "matches size: " << matchSize << endl;
 
+
+    }
+    for (auto i=begin(matches); i != end(matches); ++i)
+        cout << "---test--" << i->logip << " " << i->labip << endl;
 
 }
 

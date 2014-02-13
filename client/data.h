@@ -12,7 +12,7 @@ struct LogRec{
     int pid;	//process id
     short type;	// login:7, logout:8
     long logtime;	//登入/登出时刻（秒）
-    char logip[25];	//host name
+    char logip[257];	//host name
 
 
 };

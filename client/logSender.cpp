@@ -36,7 +36,7 @@ void LogSender::sendMatchs(list<MatchedLogRec>& matches)throw(SendDataException)
             readSendFailed(matches);
             for(auto it=begin(matches); it != end(matches); ++it)
             {
-                cout << "send: " << it->logname << " "
+                cout << "send:-----test " << it->logname << "  "
                         << it->logip << endl;
                 int w = write(sockfd, &(*it), sizeof(MatchedLogRec));
                 if(w == -1)
@@ -45,6 +45,9 @@ void LogSender::sendMatchs(list<MatchedLogRec>& matches)throw(SendDataException)
                     throw SendDataException("sendDataException: write failed");
                 }
                 matches.pop_back();
+
+
+
             }
             cout << "发送匹配的记录到服务器" << endl;
         }

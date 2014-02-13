@@ -5,6 +5,8 @@
 #include <QSqlQuery>
 #include <QtSql/QSqlDatabase>
 #include <QDateTime>
+#include <QDebug>
+#include <arpa/inet.h>
 
 using namespace std;
 
@@ -52,24 +54,31 @@ void LogDao::saveData(const MatchedLogRec& rec)
     //get table name
     int logoutday = logouttime.date().day();
     char buf[20];
-    sprintf(buf, " detail_%02d ", logoutday);
+    sprintf(buf, " details_%02d ", logoutday);
     QString table(buf);
-    QString fieldname(" (loginame,loginip,logindate,logoutdate,labip,duration)");
+    QString fieldname(" (loginname,loginip,logindate,logoutdate,labip,duration)");
     //QString value(" VALUES (:rec.logname,:rec.logip,:logintime,:logouttime,:rec.labip,:rec.duration)");
-    QString value(" (?, ?, ?, ?, ?, ?");
+    QString value(" VALUES (?, ?, ?, ?, ?, ?) ");
     QString insert("INSERT INTO " + table);
+
 
     query.prepare(insert + fieldname + value );
     query.addBindValue(rec.logname);
     query.addBindValue(rec.logip);
-    query.addBindValue(rec.loginTime);
-    query.addBindValue(rec.logoutTime);
+    query.addBindValue(logintime);
+    query.addBindValue(logouttime);
     query.addBindValue(rec.labip);
     query.addBindValue(rec.durations);
+
+    qDebug() << insert + fieldname + value;
+    cout << rec.logip << endl;
     bool state = query.exec();
     if (state == true)
     {
         qDebug() << "Insert OK!" << endl;
+    } else{
+        qDebug() << "Insert Fail!";
+        exit(-1);
     }
 
 }

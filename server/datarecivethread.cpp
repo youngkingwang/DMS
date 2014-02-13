@@ -5,6 +5,8 @@
 #include <pthread.h>
 #include "logdao.h"
 #include "unistd.h"
+#include <arpa/inet.h>
+#include <cstring>
 
 using namespace std;
 
@@ -20,13 +22,14 @@ void DataReciveThread::run()
     MatchedLogRec log;
     bool isempty = true;
 
+    char buf[257];
     while(read(this->connfd, &log, sizeof(log)) > 0)
     {
         //sleep(2);
-        cout << "recive data: " <<  log.logname << " "
-                << log.logip << endl;
+
 
         pthread_mutex_lock(&UserData::mutex);
+        //cout << "-------test---" << log.logip << endl;
         isempty = UserData::isEmpty();
         UserData::push_data(log);
         pthread_mutex_unlock(&UserData::mutex);
